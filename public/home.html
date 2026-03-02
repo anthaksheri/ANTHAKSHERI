@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Anthakshari</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #12001f, #000);
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #ff00ff;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 4rem;
+      text-shadow: 0 0 20px #ff00ff;
+      margin-bottom: 40px;
+    }
+
+    .play-btn {
+      padding: 20px 80px;
+      font-size: 1.5rem;
+      border-radius: 40px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, #ff00ff, #00ffff);
+      color: black;
+      box-shadow: 0 0 30px #ff00ff;
+      transition: transform 0.3s;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 50px #00ffff;
+    }
+  </style>
+</head>
+
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="container">
+  <h1 class="title">Anthakshari</h1>
+  <button class="play-btn" onclick="startGame()">PLAY</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const particles = [];
+  const COUNT = 120;
+
+  class Letter {
+    constructor() {
+      this.reset();
+    }
+
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 14 + Math.random() * 14;
+      this.char = chars[Math.floor(Math.random() * chars.length)];
+      this.alpha = 0.2 + Math.random() * 0.6;
+
+      // very slow, random direction
+      this.vx = (Math.random() - 0.5) * 0.3;
+      this.vy = (Math.random() - 0.5) * 0.3;
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // wrap around edges
+      if (this.x < -50 || this.x > canvas.width + 50 ||
+          this.y < -50 || this.y > canvas.height + 50) {
+        this.reset();
+      }
+    }
+
+    draw() {
+      ctx.fillStyle = `rgba(255, 0, 255, ${this.alpha})`;
+      ctx.font = `${this.size}px Orbitron`;
+      ctx.fillText(this.char, this.x, this.y);
+    }
+  }
+
+  for (let i = 0; i < COUNT; i++) {
+    particles.push(new Letter());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  function startGame() {
+    window.location.href = "login.html";
+  }
+</script>
+
+</body>
+</html>

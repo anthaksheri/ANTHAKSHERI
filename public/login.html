@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | Anthakshari Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --neon-pink: #ff00ff;
+      --neon-blue: #00ffff;
+      --glass-bg: rgba(255, 255, 255, 0.07);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0a0014;
+      font-family: 'Orbitron', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Canvas */
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: radial-gradient(circle at center, #1a0033 0%, #000 100%);
+    }
+
+    /* Login Container (Glassmorphism) */
+    .login-box {
+      position: relative;
+      z-index: 10;
+      background: var(--glass-bg);
+      padding: 50px 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 0, 255, 0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      transition: transform 0.3s ease;
+    }
+
+    .login-box:hover {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 35px;
+      text-shadow: 0 0 10px var(--neon-pink);
+    }
+
+    /* Google Button Wrapper */
+    .google-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .divider {
+      margin: 20px 0;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+    }
+
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 10px;
+    }
+
+    /* Guest Button styling */
+    .btn-guest {
+      width: 100%;
+      padding: 15px;
+      background: transparent;
+      color: var(--neon-blue);
+      border: 2px solid var(--neon-blue);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-guest:hover {
+      background: var(--neon-blue);
+      color: #000;
+      box-shadow: 0 0 20px var(--neon-blue);
+      transform: scale(1.02);
+    }
+
+    .btn-guest:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="login-box">
+  <h1>Login to Play</h1>
+
+  <div class="google-wrapper">
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID" 
+         data-callback="onGoogleSignIn"
+         data-auto_prompt="false"></div>
+    <div class="g_id_signin" 
+         data-type="standard"
+         data-size="large"
+         data-theme="filled_black"
+         data-text="signin_with"
+         data-shape="rectangular"
+         data-logo_alignment="left"></div>
+  </div>
+
+  <div class="divider">OR</div>
+
+  <button class="btn-guest" onclick="guestLogin()">Play as Guest</button>
+</div>
+
+<script>
+  // --- BACKGROUND ANIMATION ENGINE ---
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const particles = [];
+  const COUNT = 80; // Slightly fewer for login to keep focus on the box
+
+  class Letter {
+    constructor() {
+      this.reset();
+      this.y = Math.random() * canvas.height;
+    }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.size = 12 + Math.random() * 20;
+      this.char = chars[Math.floor(Math.random() * chars.length)];
+      this.alpha = 0.1 + Math.random() * 0.4;
+      this.speed = (this.size / 15) * 0.4;
+      this.color = this.size > 20 ? "0, 255, 255" : "255, 0, 255";
+    }
+    update() {
+      this.y += this.speed;
+      if (this.y > canvas.height + 50) this.reset();
+    }
+    draw() {
+      ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+      ctx.font = `${this.size}px 'Orbitron'`;
+      ctx.fillText(this.char, this.x, this.y);
+    }
+  }
+
+  for (let i = 0; i < COUNT; i++) particles.push(new Letter());
+
+  function animate() {
+    ctx.fillStyle = "rgba(10, 0, 20, 0.3)"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.update();
+      p.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // --- LOGIN LOGIC ---
+  function guestLogin() {
+    const guestId = 'Guest_' + Math.random().toString(36).substring(2, 8);
+    localStorage.setItem('isGuest', 'true');
+    localStorage.setItem('playerId', guestId);
+    window.location.href = `enter-name.html?mode=guest&name=${guestId}`;
+  }
+
+  function onGoogleSignIn(response) {
+    const jwt = response.credential;
+    const payload = JSON.parse(atob(jwt.split('.')[1]));
+    localStorage.setItem('isGuest', 'false');
+    localStorage.setItem('googleEmail', payload.email);
+    localStorage.setItem('googleName', payload.name);
+    window.location.href = `enter-name.html?mode=google&name=${encodeURIComponent(payload.name)}`;
+  }
+</script>
+
+</body>
+</html>

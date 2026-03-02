@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthaksheri - Room Settings</title>
+    <link rel="stylesheet" href="roomsettings.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+    <style>
+        /* Immediate fail-safe to prevent flickering */
+        body, html { margin: 0; padding: 0; background-color: #0d1222; height: 100%; overflow: hidden; }
+        #bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+        .container { position: relative; z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg"></canvas>
+
+    <div class="container">
+        <div class="menu-container">
+            <h1 class="game-title">⚙️ Customize Room</h1>
+            
+            <form id="settings-form">
+                <div class="form-group">
+                    <label for="gameMode">Game Mode:</label>
+                    <select id="gameMode" name="gameMode">
+                        <option value="freestyle">FREE STYLE (Normal)</option>
+                        <option value="noun-war">NOUN WAR (Nouns Only)</option>
+                        <option value="fast-furious">FAST AND FURIOUS (5s Limit)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="teams">Team Mode:</label>
+                    <select id="teams" name="teams">
+                        <option value="solo">Solo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rounds">Number of Rounds (1-20):</label>
+                    <input type="number" id="rounds" name="rounds" min="1" max="20" value="5" />
+                </div>
+
+                <div class="form-group">
+                    <label for="maxPlayers">Max Players (2-10):</label>
+                    <input type="number" id="maxPlayers" name="maxPlayers" min="2" max="10" value="10" />
+                </div>
+                
+                <button type="button" class="save-btn primary-btn" onclick="saveSettings()">💾 Save Settings</button>
+            </form>
+
+            <button class="back-btn secondary-btn" onclick="window.location.href='roomlobby.html'">← Back to Lobby</button>
+            <p id="settings-save-status" class="status-message error"></p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="roomsettings.js"></script> 
+    <script>
+        // --- Background Engine (BFCache Compatible) ---
+        const canvas = document.getElementById("bg");
+        const ctx = canvas.getContext("2d");
+        let animationId;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        const particles = [];
+        function startEngine() {
+            if (animationId) cancelAnimationFrame(animationId);
+            resize();
+            particles.length = 0;
+            // Fewer, slower particles for the settings screen to keep focus on form
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 1,
+                    speed: Math.random() * 0.3 + 0.1,
+                    alpha: Math.random() * 0.5
+                });
+            }
+            function animate() {
+                ctx.fillStyle = "rgba(13, 18, 34, 0.2)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    ctx.fillStyle = `rgba(0, 196, 255, ${p.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.y += p.speed;
+                    if (p.y > canvas.height) p.y = -5;
+                });
+                animationId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        window.addEventListener("pageshow", startEngine);
+        window.addEventListener("resize", resize);
+        startEngine();
+    </script>
+</body>
+</html>

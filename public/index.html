@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anthakshari - Game Modes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --neon-pink: #ff00ff;
+      --neon-blue: #00ffff;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0a0014;
+      font-family: 'Orbitron', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+
+    /* Fixed background positioning */
+    #bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(circle at center, #1a0033 0%, #000 100%);
+      pointer-events: none;
+    }
+
+    .menu-container {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 90%;
+      max-width: 900px;
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .welcome {
+      font-size: 0.9rem;
+      color: var(--neon-blue);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      opacity: 0.8;
+    }
+
+    .game-title {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 10px;
+      text-shadow: 0 0 15px var(--neon-pink);
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      margin-bottom: 40px;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .mode-selection {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .mode-box {
+      background: var(--glass);
+      padding: 30px 20px;
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      border-radius: 15px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mode-box:hover {
+      transform: translateY(-10px);
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      background: rgba(0, 255, 255, 0.05);
+    }
+
+    .mode-box h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: var(--neon-blue);
+      letter-spacing: 2px;
+    }
+
+    .mode-box p {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.4;
+    }
+
+    .room-btn {
+      padding: 15px 40px;
+      background: transparent;
+      border: 2px solid var(--neon-pink);
+      color: var(--neon-pink);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-radius: 5px;
+      cursor: pointer;
+      letter-spacing: 3px;
+      transition: all 0.3s ease;
+    }
+
+    .room-btn:hover {
+      background: var(--neon-pink);
+      color: #000;
+      box-shadow: 0 0 30px var(--neon-pink);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="menu-container">
+  <div id="welcome" class="welcome">Welcome, Operator</div>
+  <h1 class="game-title">Anthakshari</h1>
+  <p class="subtitle">Select Mission Mode</p>
+
+  <div class="mode-selection">
+    <div class="mode-box" onclick="queueMatch('freestyle')">
+      <h2>FREE STYLE</h2>
+      <p>Classic word chain. No rules, just flow.</p>
+    </div>
+    <div class="mode-box" onclick="queueMatch('noun-war')">
+      <h2>NOUN WAR</h2>
+      <p>Strict mode. Only nouns detected by the system.</p>
+    </div>
+    <div class="mode-box" onclick="queueMatch('fast-furious')">
+      <h2>FAST AND FURIOUS</h2>
+      <p>5-second reaction time. Speed is survival.</p>
+    </div>
+  </div>
+
+  <button class="room-btn" onclick="window.location.href='room_entry.html'">Create/Join Private Room</button>
+</div>
+
+<script>
+  // --- ROBUST BACKGROUND ENGINE ---
+  const canvas = document.getElementById("bg");
+  let ctx = canvas.getContext("2d");
+  let animationId;
+  const particles = [];
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  class Letter {
+    constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.size = 12 + Math.random() * 18;
+      this.char = chars[Math.floor(Math.random() * chars.length)];
+      this.alpha = 0.1 + Math.random() * 0.3;
+      this.speed = (this.size / 15) * 0.5;
+      this.color = this.size > 20 ? "0, 255, 255" : "255, 0, 255";
+    }
+    update() { this.y += this.speed; if (this.y > canvas.height + 50) this.reset(); }
+    draw() {
+      ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+      ctx.font = `${this.size}px 'Orbitron'`;
+      ctx.fillText(this.char, this.x, this.y);
+    }
+  }
+
+  function startEngine() {
+    // 1. Clear any existing animation loops
+    if (animationId) cancelAnimationFrame(animationId);
+    
+    // 2. Re-acquire context and resize
+    ctx = canvas.getContext("2d");
+    resize();
+    
+    // 3. Re-initialize particles if they were cleared
+    if (particles.length === 0) {
+      for (let i = 0; i < 60; i++) particles.push(new Letter());
+    }
+    
+    function animate() {
+      ctx.fillStyle = "rgba(10, 0, 20, 0.3)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      animationId = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // --- BFCache & TAB FIXES ---
+  window.addEventListener("pageshow", (event) => {
+    // This triggers on back-button and fresh load
+    startEngine();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    // Restart when user switches back to this tab
+    if (document.visibilityState === "visible") {
+      startEngine();
+    } else {
+      cancelAnimationFrame(animationId);
+    }
+  });
+
+  window.addEventListener("resize", resize);
+
+  // --- GAME LOGIC ---
+  const playerName = localStorage.getItem("playerName");
+  const isGuest = localStorage.getItem("isGuest") === "true";
+
+  if (!playerName) {
+    window.location.href = "login.html"; 
+  } else {
+    document.getElementById("welcome").textContent = `Welcome, ${playerName}${isGuest ? " [GUEST]" : ""}!`;
+  }
+
+  function queueMatch(mode) {
+    localStorage.setItem("selectedMode", mode);
+    const container = document.querySelector('.menu-container');
+    container.style.opacity = '0';
+    container.style.transform = 'scale(1.05)';
+    container.style.transition = '0.4s ease-in';
+    
+    setTimeout(() => {
+      window.location.href = "matchmaking.html"; 
+    }, 400);
+  }
+
+  // Final manual start for the very first load
+  startEngine();
+</script>
+
+</body>
+</html>

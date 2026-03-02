@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Matchmaking | Anthakshari</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --neon-pink: #ff00ff;
+      --neon-blue: #00ffff;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0a0014;
+      font-family: 'Orbitron', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      background: radial-gradient(circle at center, #1a0033 0%, #000 100%);
+    }
+
+    .matchmaking-container {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 90%;
+      max-width: 800px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(0, 255, 255, 0.1);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      text-shadow: 0 0 15px var(--neon-blue);
+      animation: pulseText 2s infinite;
+    }
+
+    @keyframes pulseText {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    #countdown {
+      color: var(--neon-pink);
+      letter-spacing: 3px;
+      font-weight: 700;
+      margin-bottom: 40px;
+      height: 20px;
+    }
+
+    /* Player Slots Grid */
+    #player-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .player-slot {
+      background: var(--glass);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      transition: all 0.4s ease;
+      color: rgba(255, 255, 255, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animation for empty slots */
+    .player-slot:not(.occupied) {
+      animation: scan 3s infinite;
+    }
+
+    @keyframes scan {
+      0%, 100% { border-color: rgba(255, 255, 255, 0.1); }
+      50% { border-color: rgba(0, 255, 255, 0.3); }
+    }
+
+    /* When a player is in the slot */
+    .player-slot.occupied {
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid var(--neon-blue);
+      color: #fff;
+      text-shadow: 0 0 10px var(--neon-blue);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    .player-slot.occupied::after {
+      content: "CONNECTED";
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      font-size: 0.5rem;
+      color: var(--neon-blue);
+    }
+
+    @media (max-width: 600px) {
+      #player-slots { grid-template-columns: repeat(2, 1fr); }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="matchmaking-container">
+  <h1>MATCHMAKING</h1>
+  <p id="countdown">Searching for active players...</p> 
+
+  <div id="player-slots"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // --- BACKGROUND ENGINE ---
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+  let animationId;
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const particles = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  class Letter {
+    constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.size = 12 + Math.random() * 18;
+      this.char = chars[Math.floor(Math.random() * chars.length)];
+      this.alpha = 0.1 + Math.random() * 0.3;
+      this.speed = (this.size / 15) * 0.5;
+      this.color = this.size > 20 ? "0, 255, 255" : "255, 0, 255";
+    }
+    update() { this.y += this.speed; if (this.y > canvas.height + 50) this.reset(); }
+    draw() {
+      ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+      ctx.font = `${this.size}px 'Orbitron'`;
+      ctx.fillText(this.char, this.x, this.y);
+    }
+  }
+
+  function startEngine() {
+    cancelAnimationFrame(animationId);
+    resize();
+    particles.length = 0;
+    for (let i = 0; i < 60; i++) particles.push(new Letter());
+    function animate() {
+      ctx.fillStyle = "rgba(10, 0, 20, 0.3)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      animationId = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  window.addEventListener("pageshow", startEngine);
+  window.addEventListener("resize", resize);
+  startEngine();
+
+  // --- MATCHMAKING LOGIC ---
+  const MAX_PLAYERS = 6;
+  const playerName = localStorage.getItem("playerName") || "Operator";
+  const selectedMode = localStorage.getItem('selectedMode') || 'freestyle';
+
+  const slotsContainer = document.getElementById("player-slots");
+  for (let i = 0; i < MAX_PLAYERS; i++) {
+    const slot = document.createElement("div");
+    slot.className = "player-slot";
+    slot.id = `slot-${i}`;
+    slot.innerText = (i === 0) ? `${playerName} (You)` : "Searching...";
+    if(i === 0) slot.classList.add('occupied');
+    slotsContainer.appendChild(slot);
+  }
+  
+  const socket = io();
+
+  socket.on('connect', () => {
+    socket.emit('joinLobby', { name: playerName, mode: selectedMode });
+  });
+
+  socket.on('updatePlayers', (players) => {
+    const uniquePlayers = players.filter((p, index) => players.indexOf(p) === index);
+    const playerCount = uniquePlayers.length;
+
+    for (let i = 0; i < MAX_PLAYERS; i++) {
+      const slotEl = document.getElementById(`slot-${i}`);
+      if (uniquePlayers[i]) {
+        slotEl.innerText = uniquePlayers[i] + (uniquePlayers[i] === playerName ? ' (You)' : '');
+        slotEl.classList.add('occupied');
+      } else {
+        slotEl.innerText = 'Searching...';
+        slotEl.classList.remove('occupied');
+      }
+    }
+    
+    const countdownEl = document.getElementById('countdown');
+    if (playerCount === MAX_PLAYERS) {
+      countdownEl.innerText = `LOBBY FULL. INITIATING...`;
+    }
+  });
+
+  socket.on('lobbyTimer', (timeLeft) => {
+    const countdownEl = document.getElementById('countdown');
+    if (typeof timeLeft === 'number' && timeLeft >= 0) {
+      countdownEl.innerText = `BATTLE STARTS IN ${timeLeft}...`;
+      countdownEl.style.color = timeLeft <= 3 ? "var(--neon-blue)" : "var(--neon-pink)";
+    } 
+  });
+  
+  socket.on('error', (message) => {
+    alert(`System Error: ${message}`);
+    window.location.href = 'index.html'; 
+  });
+
+  socket.on('gameStarting', ({ players, mode, firstWord }) => {
+    const uniquePlayers = players.filter((p, index) => players.indexOf(p) === index);
+    localStorage.setItem('playersList', JSON.stringify(uniquePlayers));
+    localStorage.setItem('finalPlayers', JSON.stringify(uniquePlayers));
+    localStorage.setItem('startFirstWord', firstWord || '');
+    localStorage.setItem('selectedMode', mode || selectedMode);
+    
+    // Transition effect
+    document.querySelector('.matchmaking-container').style.transform = 'scale(2)';
+    document.querySelector('.matchmaking-container').style.opacity = '0';
+    document.querySelector('.matchmaking-container').style.transition = '0.5s';
+
+    setTimeout(() => {
+      window.location.href = 'game.html';
+    }, 500);
+  });
+
+  socket.on('disconnect', () => {
+    document.getElementById('countdown').innerText = 'LINK LOST — RECONNECTING...';
+  });
+</script>
+</body>
+</html>

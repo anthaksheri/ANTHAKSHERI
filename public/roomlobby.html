@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Lobby | Anthaksheri</title>
+    <link rel="stylesheet" href="roomlobby.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+    <style>
+        /* Initial fail-safe for background */
+        body, html { margin: 0; padding: 0; background-color: #0a0014; height: 100%; overflow: hidden; }
+        #bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+        .container { position: relative; z-index: 10; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg"></canvas>
+
+    <div class="container">
+        <div class="menu-container">
+            <h1 class="game-title">Waiting Lobby <span class="pulse-dot"></span></h1>
+            
+            <div class="status-box">
+                <p>Room Code: <span id="room-code" class="highlight-text big-text">------</span></p>
+                <p>Host: <span id="host-name" class="highlight-text">Identifying...</span></p>
+            </div>
+
+            <div id="room-settings-summary" class="settings-summary">
+                <h3 class="section-title">✨ Game Settings</h3>
+                <div class="settings-grid">
+                    <p>Mode: <span id="setting-mode" class="setting-value">Freestyle</span></p>
+                    <p>Teams: <span id="setting-teams" class="setting-value">Solo</span></p>
+                    <p>Rounds: <span id="setting-rounds" class="setting-value">5</span></p>
+                    <p>Max Players: <span id="setting-max" class="setting-value">6</span></p>
+                </div>
+            </div>
+
+            <h3 class="section-title player-header">Players (<span id="player-count">0</span> / <span id="setting-max-players">10</span>)</h3>
+            <ul id="players-list" class="lobby-players-list">
+                </ul>
+
+            <div id="host-controls" class="host-controls hidden">
+                <button id="settings-btn" class="secondary-btn">⚙️ Room Settings</button>
+                <button id="start-btn" class="primary-btn">🚀 START GAME</button>
+            </div>
+            
+            <p id="lobby-status" class="error"></p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="roomlobby.js"></script> 
+    <script>
+        // --- BACKGROUND ENGINE (BFCache Fix) ---
+        const canvas = document.getElementById("bg");
+        const ctx = canvas.getContext("2d");
+        let animationId;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        const chars = "01"; // Matrix binary style for lobby
+        const particles = [];
+        
+        class Letter {
+            constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = -50;
+                this.size = 10 + Math.random() * 15;
+                this.char = chars[Math.floor(Math.random() * chars.length)];
+                this.alpha = 0.05 + Math.random() * 0.2;
+                this.speed = (this.size / 10) * 0.4;
+                this.color = "0, 196, 255"; // Cyan theme
+            }
+            update() { this.y += this.speed; if (this.y > canvas.height + 50) this.reset(); }
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.font = `${this.size}px 'Orbitron'`;
+                ctx.fillText(this.char, this.x, this.y);
+            }
+        }
+
+        function startEngine() {
+            if (animationId) cancelAnimationFrame(animationId);
+            resize();
+            particles.length = 0;
+            for (let i = 0; i < 40; i++) particles.push(new Letter());
+            function animate() {
+                ctx.fillStyle = "rgba(10, 0, 20, 0.3)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                animationId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        window.addEventListener("pageshow", startEngine);
+        window.addEventListener("resize", resize);
+        startEngine();
+    </script>
+</body>
+</html>

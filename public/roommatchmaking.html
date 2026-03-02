@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Room Matchmaking</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
+</head>
+<body>
+    
+    <div class="matchmaking-container">
+        <h1 id="matchmaking-title">Finalizing Match...</h1>
+        <p id="countdown">Game starting in 10...</p> 
+
+        <h3 style="margin-top: 20px;">Players Joining</h3>
+        <ul id="players-list" class="lobby-players-list">
+            </ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="roommatchmaking.js"></script>
+</body>
+</html>

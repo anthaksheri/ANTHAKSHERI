@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Identity Check | Anthakshari</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --neon-pink: #ff00ff;
+      --neon-blue: #00ffff;
+      --error-red: #ff3131;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #0a0014;
+      font-family: 'Orbitron', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Background Engine */
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(circle at center, #1a0033 0%, #000 100%);
+      pointer-events: none;
+    }
+
+    .login-box {
+      position: relative;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 50px 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 0, 255, 0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-bottom: 40px;
+      text-shadow: 0 0 10px var(--neon-blue);
+    }
+
+    .neon-input {
+      width: 100%;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--neon-pink);
+      border-radius: 5px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      text-align: center;
+      margin-bottom: 30px;
+      outline: none;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 0 10px rgba(255, 0, 255, 0.2);
+    }
+
+    .neon-input:focus {
+      border-color: var(--neon-blue);
+      box-shadow: 0 0 20px var(--neon-blue), inset 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+
+    .input-error {
+      border-color: var(--error-red) !important;
+      animation: shake 0.4s ease-in-out;
+      box-shadow: 0 0 20px var(--error-red) !important;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .btn {
+      width: 100%;
+      padding: 18px;
+      background: transparent;
+      color: var(--neon-pink);
+      border: 2px solid var(--neon-pink);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 5px;
+      letter-spacing: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background: var(--neon-pink);
+      color: #000;
+      box-shadow: 0 0 30px var(--neon-pink);
+      transform: scale(1.05);
+    }
+
+    .label-hint {
+      display: block;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.7rem;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="login-box">
+  <h1>Identity Check</h1>
+  <span class="label-hint">Accessing Database...</span>
+  
+  <input type="text" id="playerName" class="neon-input" 
+         placeholder="SCANNING NAME..." maxlength="20" spellcheck="false" autocomplete="off">
+
+  <button class="btn" onclick="saveName()">ENTER</button>
+</div>
+
+<script>
+  // --- BACKGROUND ENGINE ---
+  const canvas = document.getElementById("bg");
+  const ctx = canvas.getContext("2d");
+  let animationFrameId;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const particles = [];
+  
+  class Letter {
+    constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+      this.size = 12 + Math.random() * 18;
+      this.char = chars[Math.floor(Math.random() * chars.length)];
+      this.alpha = 0.1 + Math.random() * 0.3;
+      this.speed = (this.size / 15) * 0.5;
+      this.color = this.size > 20 ? "0, 255, 255" : "255, 0, 255";
+    }
+    update() {
+      this.y += this.speed;
+      if (this.y > canvas.height + 50) this.reset();
+    }
+    draw() {
+      ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+      ctx.font = `${this.size}px 'Orbitron'`;
+      ctx.fillText(this.char, this.x, this.y);
+    }
+  }
+
+  function startEngine() {
+    // Kill existing loop to prevent double-speed acceleration
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    
+    resize();
+    if (particles.length === 0) {
+      for (let i = 0; i < 70; i++) particles.push(new Letter());
+    }
+    
+    function animate() {
+      ctx.fillStyle = "rgba(10, 0, 20, 0.3)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      animationFrameId = requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // --- RESTART HANDLERS (The BFCache Fix) ---
+  window.addEventListener("resize", resize);
+
+  window.addEventListener("pageshow", (event) => {
+    // Always restart the loop when page is shown, 
+    // especially if event.persisted is true (BFCache back button)
+    startEngine();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      startEngine();
+    }
+  });
+
+  // --- GAME LOGIC ---
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode') || 'guest';
+  const prefillName = params.get('name') || "";
+  const nameInput = document.getElementById("playerName");
+
+  function generateCyberpunkName() {
+    const prefixes = ["Neo", "Zero", "Pixel", "Cyber", "Glitch", "Pulse", "Synth", "Chrome"];
+    const suffixes = ["Runner", "Blade", "Shift", "Nova", "Flux", "Core", "Cipher", "Drift"];
+    return `${prefixes[Math.floor(Math.random() * prefixes.length)]}${suffixes[Math.floor(Math.random() * suffixes.length)]}_${Math.floor(Math.random() * 99)}`;
+  }
+
+  // Initial Name Setup
+  if (mode === "guest" && (!nameInput.value || nameInput.value === "")) {
+    nameInput.value = generateCyberpunkName();
+  } else {
+    nameInput.value = prefillName || localStorage.getItem("playerName") || "";
+  }
+
+  function saveName() {
+    const name = nameInput.value.trim();
+    if (!name) {
+      nameInput.classList.add("input-error");
+      setTimeout(() => nameInput.classList.remove("input-error"), 400);
+      return;
+    }
+
+    localStorage.setItem("playerName", name);
+    localStorage.setItem("isGuest", mode === 'guest' ? "true" : "false");
+    
+    const box = document.querySelector('.login-box');
+    box.style.opacity = '0';
+    box.style.transform = 'scale(0.9) translateY(-20px)';
+    box.style.transition = 'all 0.4s ease-in';
+
+    setTimeout(() => {
+      window.location.href = 'index.html'; 
+    }, 400);
+  }
+
+  nameInput.addEventListener("keypress", (e) => { if (e.key === "Enter") saveName(); });
+
+  // Initial start
+  startEngine();
+</script>
+</body>
+</html>

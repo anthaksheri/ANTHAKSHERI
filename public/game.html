@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Word Chain Game</title>
+    <link rel="stylesheet" href="game.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+    <div class="player-names">
+        <h3>Players</h3>
+        <div id="players-list">
+        </div>
+    </div>
+
+    <div class="game-container">
+        <header>
+            <h1 id="game-title">Word Chain</h1>
+            <p>The word is: <span id="required-letter">...</span></p>
+        </header>
+        
+        <div id="round-display" style="font-size:18px; font-weight:bold;">Waiting for players...</div> 
+
+        <div class="timer" id="timer">⏳ 0.00</div>
+
+        <div class="input-area">
+            <input type="text" id="player-input" placeholder="Enter a word..." autocomplete="off" />
+            <button onclick="submitWord()">Submit</button>
+        </div>
+
+        <button class="back-btn" onclick="window.location.href='index.html'">Back</button>
+
+        <div class="error" id="error-msg"></div>
+    </div>
+
+    <div class="history">
+        <h2>Word History</h2>
+        <ul id="wordList">
+        </ul>
+    </div>
+
+    <div id="countdown-overlay" class="overlay hidden">
+        <div id="countdown-text" class="countdown-text">3</div>
+    </div>
+
+    <div id="gameover-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="gameover-message">Game Over</h2>
+            <button onclick="window.location.href='index.html'">Back to Menu</button>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        // Passes initialization data to game.js
+        const finalPlayersJSON = localStorage.getItem('finalPlayers');
+        const finalPlayers = finalPlayersJSON ? JSON.parse(finalPlayersJSON) : null;
+        const selectedMode = localStorage.getItem('selectedMode') || 'freestyle';
+
+        window.__MATCHMAKING = {
+            finalPlayers: finalPlayers,
+            selectedMode: selectedMode
+        };
+    </script>
+
+    <script src="game.js"></script>
+    <script>
+        // Initial player list display (for waiting lobby)
+        document.addEventListener("DOMContentLoaded", () => {
+            const playerName = localStorage.getItem("playerName") || "You";
+            const players = JSON.parse(localStorage.getItem("playersList")) || [];
+            const playersListEl = document.getElementById("players-list");
+
+            const uniquePlayers = [...new Set(players)];
+
+            playersListEl.innerHTML = '';
+            uniquePlayers.forEach(name => {
+                const box = document.createElement("div");
+                box.className = "player-box";
+                box.id = `player-box-${name}`;
+                box.setAttribute("data-player", name);
+                box.innerHTML = `<span class="player-name">${name}</span> — <span class="player-score" id="score-${name}">0.00</span>`;
+                playersListEl.appendChild(box);
+            });
+        });
+    </script>
+</body>
+</html>

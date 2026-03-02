@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Room | Anthaksheri</title>
+    <link rel="stylesheet" href="roomentry.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+    <style>
+        /* Critical Inline Fixes to prevent blank screens before CSS loads */
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0014;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .container {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg"></canvas>
+
+    <div class="container">
+        <div class="menu-container">
+            <h1 class="game-title">Private Room</h1>
+            <p class="subtitle">Secure Neural Matchmaking</p>
+
+            <div class="mode-selection">
+                <div class="mode-box" onclick="createRoom()">
+                    <h2>CREATE</h2>
+                    <p>Initialize a new game session.</p>
+                </div>
+                <div class="mode-box" onclick="showJoinInput()">
+                    <h2>JOIN</h2>
+                    <p>Enter an existing access code.</p>
+                </div>
+            </div>
+
+            <div id="join-input-area" class="input-area hidden">
+                <input type="text" id="room-code-input" placeholder="CODE" maxlength="6" spellcheck="false" autocomplete="off" />
+                <button class="join-btn" onclick="joinRoomByCode()">JOIN ROOM</button>
+                <div id="entry-error" class="error"></div>
+            </div>
+
+            <button class="back-btn" onclick="window.location.href='index.html'">← Back to Missions</button>
+        </div>
+    </div>
+
+    <script>
+        // --- BACKGROUND ENGINE (BFCache & Visibility Fix) ---
+        const canvas = document.getElementById("bg");
+        const ctx = canvas.getContext("2d");
+        let animationId;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const particles = [];
+        
+        class Letter {
+            constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = -50;
+                this.size = 12 + Math.random() * 18;
+                this.char = chars[Math.floor(Math.random() * chars.length)];
+                this.alpha = 0.1 + Math.random() * 0.3;
+                this.speed = (this.size / 15) * 0.5;
+                this.color = this.size > 20 ? "0, 255, 255" : "255, 0, 255";
+            }
+            update() { this.y += this.speed; if (this.y > canvas.height + 50) this.reset(); }
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.font = `${this.size}px 'Orbitron'`;
+                ctx.fillText(this.char, this.x, this.y);
+            }
+        }
+
+        function startEngine() {
+            // Stop any dangling loops
+            if (animationId) cancelAnimationFrame(animationId);
+            
+            resize();
+            particles.length = 0;
+            for (let i = 0; i < 60; i++) particles.push(new Letter());
+            
+            function animate() {
+                // Dim trail effect
+                ctx.fillStyle = "rgba(10, 0, 20, 0.3)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                particles.forEach(p => { p.update(); p.draw(); });
+                animationId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // --- BFCache / BACK BUTTON PROTECTION ---
+        window.addEventListener("pageshow", (event) => {
+            // Always restart engine when page is shown
+            startEngine();
+        });
+
+        // Force restart if the tab was minimized and reopened
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                startEngine();
+            }
+        });
+
+        window.addEventListener("resize", resize);
+
+        // --- ROOM LOGIC ---
+        function showJoinInput() {
+            const area = document.getElementById('join-input-area');
+            area.classList.toggle('hidden');
+            if (!area.classList.contains('hidden')) {
+                document.getElementById('room-code-input').focus();
+            }
+        }
+
+        function createRoom() {
+            localStorage.setItem('roomAction', 'create');
+            transitionTo('roomlobby.html');
+        }
+
+        function joinRoomByCode() {
+            const codeInput = document.getElementById('room-code-input');
+            const code = codeInput.value.trim().toUpperCase();
+            const errorEl = document.getElementById('entry-error');
+            errorEl.textContent = ""; 
+            
+            if (code.length !== 6 || !/^[A-Z0-9]+$/.test(code)) {
+                errorEl.textContent = "INVALID CODE. 6-DIGITS REQUIRED.";
+                return;
+            }
+            
+            localStorage.setItem('roomAction', 'join');
+            localStorage.setItem('targetRoomCode', code);
+            transitionTo('roomlobby.html');
+        }
+
+        function transitionTo(url) {
+            const box = document.querySelector('.menu-container');
+            box.style.opacity = '0';
+            box.style.transform = 'translateY(-20px) scale(0.95)';
+            box.style.transition = 'all 0.4s ease-in';
+            setTimeout(() => { window.location.href = url; }, 400);
+        }
+
+        // Initialize on first load
+        startEngine();
+    </script>
+</body>
+</html>
