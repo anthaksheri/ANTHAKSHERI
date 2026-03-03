@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Anthaksheri</title>
+  <title>Anthakshari</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -47,12 +47,78 @@
       color: black;
       box-shadow: 0 0 30px #ff00ff;
       transition: transform 0.3s;
+      margin-bottom: 20px;
     }
 
     .play-btn:hover {
       transform: scale(1.08);
       box-shadow: 0 0 50px #00ffff;
     }
+
+    .guide-btn {
+      padding: 15px 60px;
+      font-size: 1.2rem;
+      border-radius: 30px;
+      border: 2px solid #00ffff;
+      cursor: pointer;
+      background: transparent;
+      color: #00ffff;
+      box-shadow: 0 0 15px #00ffff;
+      transition: 0.3s;
+    }
+
+    .guide-btn:hover {
+      background: #00ffff;
+      color: black;
+      box-shadow: 0 0 30px #00ffff;
+    }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #12001f;
+      padding: 40px;
+      border-radius: 20px;
+      width: 85%;
+      max-width: 550px;
+      color: white;
+      box-shadow: 0 0 40px #ff00ff;
+      text-align: left;
+      animation: popup 0.3s ease-in-out;
+    }
+
+    @keyframes popup {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-content h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ff00ff;
+    }
+
+    .modal-content ul {
+      line-height: 1.8;
+      padding-left: 20px;
+    }
+
+    .close-btn {
+      float: right;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #ff00ff;
+    }
+
   </style>
 </head>
 
@@ -61,8 +127,25 @@
 <canvas id="bg"></canvas>
 
 <div class="container">
-  <h1 class="title">Anthaksheri</h1>
+  <h1 class="title">Anthakshari</h1>
   <button class="play-btn" onclick="startGame()">PLAY</button>
+  <button class="guide-btn" onclick="openGuide()">HOW TO PLAY</button>
+</div>
+
+<!-- HOW TO PLAY MODAL -->
+<div id="guideModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeGuide()">&times;</span>
+    <h2>How To Play</h2>
+    <ul>
+      <li>The game begins with a random starting word.</li>
+      <li>Each player must type a new word that starts with the last letter of the previous word.</li>
+      <li>Words cannot be repeated during the same round.</li>
+      <li>You must answer within the time limit.</li>
+      <li>If you fail to respond correctly, you lose the round.</li>
+      <li>The last remaining player wins.</li>
+    </ul>
+  </div>
 </div>
 
 <script>
@@ -91,8 +174,6 @@
       this.size = 14 + Math.random() * 14;
       this.char = chars[Math.floor(Math.random() * chars.length)];
       this.alpha = 0.2 + Math.random() * 0.6;
-
-      // very slow, random direction
       this.vx = (Math.random() - 0.5) * 0.3;
       this.vy = (Math.random() - 0.5) * 0.3;
     }
@@ -101,7 +182,6 @@
       this.x += this.vx;
       this.y += this.vy;
 
-      // wrap around edges
       if (this.x < -50 || this.x > canvas.width + 50 ||
           this.y < -50 || this.y > canvas.height + 50) {
         this.reset();
@@ -121,12 +201,10 @@
 
   function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     particles.forEach(p => {
       p.update();
       p.draw();
     });
-
     requestAnimationFrame(animate);
   }
 
@@ -134,6 +212,22 @@
 
   function startGame() {
     window.location.href = "login.html";
+  }
+
+  function openGuide() {
+    document.getElementById("guideModal").style.display = "flex";
+  }
+
+  function closeGuide() {
+    document.getElementById("guideModal").style.display = "none";
+  }
+
+  // Close modal when clicking outside content
+  window.onclick = function(event) {
+    const modal = document.getElementById("guideModal");
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
   }
 </script>
 
